@@ -6,6 +6,7 @@ import { SessionBar } from './components/SessionBar/SessionBar';
 
 import { TitleBar } from './components/TitleBar/TitleBar';
 import { usePitLapStoreUpdater } from '../../context/PitLapStore/PitLapStoreUpdater';
+import { useMiniSectorStoreUpdater } from '../../context/MiniSectorStore/MiniSectorStoreUpdater';
 import { useIsSingleMake } from './hooks/useIsSingleMake';
 
 export const Relative = () => {
@@ -20,6 +21,7 @@ export const Relative = () => {
   const isSessionVisible = useSessionVisibility(settings?.sessionVisibility);
 
   usePitLapStoreUpdater();
+  useMiniSectorStoreUpdater();
 
   const isSingleMake = useIsSingleMake();
   const hideCarManufacturer = !!(settings?.carManufacturer?.hideIfSingleMake && isSingleMake);

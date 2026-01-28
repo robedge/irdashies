@@ -11,6 +11,7 @@ vi.mock('@irdashies/context', async (importOriginal) => {
     useFocusCarIdx: vi.fn(),
     useTelemetryValues: vi.fn(),
     useSessionStore: vi.fn(),
+    useMiniSectorGaps: vi.fn(() => []),
   };
 });
 
@@ -19,7 +20,7 @@ vi.mock('./useDriverPositions', () => ({
 }));
 
 // Import mocked functions after vi.mock
-const { useFocusCarIdx, useTelemetryValues, useSessionStore } = await import('@irdashies/context');
+const { useFocusCarIdx, useTelemetryValues, useSessionStore, useMiniSectorGaps } = await import('@irdashies/context');
 const { useDriverStandings } = await import('./useDriverPositions');
 
 describe('useDriverRelatives', () => {
@@ -257,6 +258,33 @@ describe('useDriverRelatives', () => {
       expect(result.current[2].delta).toBeCloseTo(-30);
     }
   );
+
+  it('should use mini-sector gaps when available', () => {
+    // Mini-sector store provides gaps: car 1 is +5s ahead, car 2 is -3s behind
+    vi.mocked(useMiniSectorGaps).mockReturnValue([0, 5, -3]);
+
+    const { result } = renderHook(() => useDriverRelatives({ buffer: 2 }));
+
+    expect(result.current).toHaveLength(3);
+    // Car ahead should use mini-sector gap (+5s) instead of CarIdxEstTime (+10s)
+    expect(result.current[0].carIdx).toBe(1);
+    expect(result.current[0].delta).toBeCloseTo(5);
+    // Player delta is always 0
+    expect(result.current[1].delta).toBe(0);
+    // Car behind should use mini-sector gap (-3s) instead of CarIdxEstTime (-10s)
+    expect(result.current[2].carIdx).toBe(2);
+    expect(result.current[2].delta).toBeCloseTo(-3);
+  });
+
+  it('should fall back to CarIdxEstTime when mini-sector gaps are empty', () => {
+    vi.mocked(useMiniSectorGaps).mockReturnValue([]);
+
+    const { result } = renderHook(() => useDriverRelatives({ buffer: 2 }));
+
+    // Should use CarIdxEstTime: car 1 = 109-99 = +10, car 2 = 89-99 = -10
+    expect(result.current[0].delta).toBeCloseTo(10);
+    expect(result.current[2].delta).toBeCloseTo(-10);
+  });
 
   it('should filter out off-track cars', () => {
     const mockDriversWithOffTrack = [

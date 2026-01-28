@@ -8,4 +8,5 @@ export * from './PitLapStore/PitLapStore';
 export * from './PitLaneStore/PitLaneStore';
 export * from './PitLaneStore/PitLaneProvider';
 export * from './PitLaneStore/usePitLaneDetection';
+export * from './MiniSectorStore/MiniSectorStore';
 export * from './shared';

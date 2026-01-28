@@ -3,6 +3,7 @@ import {
   useSessionStore,
   useTelemetryValues,
   useFocusCarIdx,
+  useMiniSectorGaps,
 } from '@irdashies/context';
 import { useDriverStandings } from './useDriverPositions';
 import type { Standings } from '../createStandings';
@@ -17,6 +18,7 @@ export const useDriverRelatives = ({ buffer }: { buffer: number }) => {
   const playerIndex = useFocusCarIdx();
   const paceCarIdx =
     useSessionStore((s) => s.session?.DriverInfo?.PaceCarIdx) ?? -1;
+  const miniSectorGaps = useMiniSectorGaps();
 
   const standings = useMemo(() => {
     const driversByCarIdx = new Map(drivers.map(driver => [driver.carIdx, driver]));
@@ -46,6 +48,15 @@ export const useDriverRelatives = ({ buffer }: { buffer: number }) => {
 
     const calculateDelta = (otherCarIdx: number) => {
       const playerCarIdx = playerIndex ?? 0;
+
+      // Priority 1: Mini-sector interpolation (most accurate, accounts for track characteristics)
+      if (otherCarIdx !== playerCarIdx && miniSectorGaps.length > 0) {
+        const miniGap = miniSectorGaps[otherCarIdx];
+        if (miniGap !== undefined && miniGap !== 0) {
+          return miniGap;
+        }
+      }
+
       const player = playerIndex !== undefined ? driversByCarIdx.get(playerIndex) : undefined;
       const other = driversByCarIdx.get(otherCarIdx);
 
@@ -152,7 +163,7 @@ export const useDriverRelatives = ({ buffer }: { buffer: number }) => {
       .slice(0, buffer);
 
     return [...driversAhead, player, ...driversBehind];
-  }, [buffer, playerIndex, carIdxLapDistPct, drivers, paceCarIdx, carIdxEstTime]);
+  }, [buffer, playerIndex, carIdxLapDistPct, drivers, paceCarIdx, carIdxEstTime, miniSectorGaps]);
 
   return standings;
 };
